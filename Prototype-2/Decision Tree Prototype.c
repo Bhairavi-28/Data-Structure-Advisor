@@ -29,7 +29,7 @@ void traverse(struct Node* node) {
 
     char answer;
     printf("\n%s (y/n): ", node->question);
-    scanf("%c", &answer);
+    scanf(" %c", &answer);
 
     if(answer=='y' || answer=='Y')
         traverse(node->yes);
@@ -48,6 +48,7 @@ int main() {
     root->no->yes = createNode("Use an Array.");
     root->no->no = createNode("Use a Linked List.");
 
+    printf("=====DATA STRUCTURE ADVISOR=====");
     traverse(root);
 
     return 0;
