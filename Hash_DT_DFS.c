@@ -43,10 +43,12 @@ struct Node {
 };
 
 struct Node* createNode(char *question, char *key) {
-    struct Node newNode = (struct Node)malloc(sizeof(struct Node));
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node)); // ✅ Fixed
     strcpy(newNode->question, question);
-    if (key != NULL) strcpy(newNode->key, key);
-    else strcpy(newNode->key, "");
+    if (key != NULL)
+        strcpy(newNode->key, key);
+    else
+        strcpy(newNode->key, "");
     newNode->yes = NULL;
     newNode->no = NULL;
     return newNode;
@@ -62,7 +64,10 @@ StackFrame stack[MAX_STACK];
 int top = -1;
 
 void push(struct Node *node, char *path) {
-    if (top >= MAX_STACK - 1) return;
+    if (top >= MAX_STACK - 1) {
+        printf("Stack overflow!\n");
+        return;
+    }
     top++;
     stack[top].node = node;
     strcpy(stack[top].path, path);
@@ -96,6 +101,12 @@ void dfsTraversal(struct Node *root) {
         scanf(" %c", &answer);
         answer = tolower(answer);
 
+        while (answer != 'y' && answer != 'n') {
+            printf("Please enter 'y' or 'n': ");
+            scanf(" %c", &answer);
+            answer = tolower(answer);
+        }
+
         char newPath[10];
         strcpy(newPath, frame.path);
         int len = strlen(newPath);
@@ -107,6 +118,14 @@ void dfsTraversal(struct Node *root) {
         else
             push(current->no, newPath);
     }
+}
+
+// ---------- Cleanup ----------
+void freeTree(struct Node *node) {
+    if (node == NULL) return;
+    freeTree(node->yes);
+    freeTree(node->no);
+    free(node);
 }
 
 // ---------- Main ----------
@@ -134,6 +153,7 @@ int main() {
     for (int i = 0; i < TABLE_SIZE; i++) {
         if (hashTable[i] != NULL) free(hashTable[i]);
     }
+    freeTree(root);
 
     return 0;
 }
