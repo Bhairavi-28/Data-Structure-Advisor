@@ -6,7 +6,7 @@
 #define TABLE_SIZE 20
 #define MAX_STACK 100
 
-// ---------- Hash Table for Explanations ----------
+//Hash Table for Explanations
 struct Rule {
     char key[10];
     char explanation[300];
@@ -34,7 +34,7 @@ char *getExplanation(char *key) {
     return "No detailed explanation found for this path.";
 }
 
-// ---------- Decision Tree ----------
+//Decision Tree
 struct Node {
     char question[200];
     char key[10];
