@@ -5,144 +5,141 @@
 #include <string.h>
 #include <stdlib.h>
 
-// -------------------------
-// Log Structure
-// -------------------------
-typedef struct {
-    char question[128];
-    char answer[128];
-} QAEntry;
-
-typedef struct {
-    QAEntry entries[50];
-    int count;
-} LogContext;
-
-void addLog(LogContext *log, const char *q, const char *a) {
-    strcpy(log->entries[log->count].question, q);
-    strcpy(log->entries[log->count].answer, a);
-    log->count++;
-}
-
-// -------------------------
-// Decision Tree Node
-// -------------------------
+// ---------------------------------------------------------
+// Decision Tree Node Structure
+// ---------------------------------------------------------
 typedef struct Node {
-    char conditionName[128]; 
-    char matchValue[32];     
+    char condition[50];        // What question/condition this node checks
+    char value[50];            // Value to compare against (optional)
+    
+    char recommendation[50];   // Filled only for leaf nodes
+    char reason[200];          // Explanation for leaf nodes
 
-    char recommendation[128];
-    char reason[256];
-
-    struct Node *children[10];
-    int childCount;
+    struct Node* yes;          // Yes branch
+    struct Node* no;           // No branch
 } Node;
 
-// Create a normal (condition) node
-Node* createNode(const char *condition, const char *match) {
-    Node *n = (Node*)malloc(sizeof(Node));
-    strcpy(n->conditionName, condition);
-    strcpy(n->matchValue, match);
-    n->childCount = 0;
-    n->recommendation[0] = '\0';
-    n->reason[0] = '\0';
-    return n;
-}
-
-// Create leaf node
-Node* createLeaf(const char *match, const char *rec, const char *reason) {
-    Node *n = createNode("", match);
-    strcpy(n->recommendation, rec);
-    strcpy(n->reason, reason);
-    return n;
-}
-
-// Add child
-void addChild(Node *parent, Node *child) {
-    parent->children[parent->childCount++] = child;
-}
-
-// -------------------------
-// Traversal
-// -------------------------
-Node* traverseTree(Node *root,
-                   const char *dataSize,
-                   const char *operation,
-                   const char *order,
-                   const char *priority,
-                   LogContext *log)
+// ---------------------------------------------------------
+// Create a node
+// ---------------------------------------------------------
+Node* createNode(const char *condition, const char *value,
+                 const char *recommendation, const char *reason) 
 {
-    Node *current = root;
+    Node* n = (Node*)malloc(sizeof(Node));
+    strcpy(n->condition, condition);
+    strcpy(n->value, value);
 
-    while (current->childCount > 0) {
-        const char *value = NULL;
+    if (recommendation) strcpy(n->recommendation, recommendation);
+    else strcpy(n->recommendation, "");
 
-        if (strcmp(current->conditionName, "dataSize") == 0) value = dataSize;
-        else if (strcmp(current->conditionName, "operation") == 0) value = operation;
-        else if (strcmp(current->conditionName, "order") == 0) value = order;
-        else if (strcmp(current->conditionName, "priority") == 0) value = priority;
+    if (reason) strcpy(n->reason, reason);
+    else strcpy(n->reason, "");
 
-        addLog(log, current->conditionName, value);
-
-        int found = 0;
-        for (int i = 0; i < current->childCount; i++) {
-            if (strcmp(current->children[i]->matchValue, value) == 0) {
-                current = current->children[i];
-                found = 1;
-                break;
-            }
-        }
-
-        if (!found) return NULL; 
-    }
-
-    return current;
+    n->yes = NULL;
+    n->no = NULL;
+    return n;
 }
 
-// -------------------------
-// Build the tree
-// -------------------------
-Node* buildDecisionTree() {
-    Node *root = createNode("dataSize", "");
+// ---------------------------------------------------------
+// Build the simple decision tree
+// ---------------------------------------------------------
+Node* buildDecisionTree() 
+{
+    // Root: data size?
+    Node* root = createNode("dataSize", "small", NULL, NULL);
 
-    // SMALL
-    Node *small = createNode("operation", "small");
-    addChild(root, small);
+    // SMALL →
+    root->yes = createNode("operation", "insert", NULL, NULL);
+        root->yes->yes = createNode("", "",
+            "Linked List",
+            "Small data → insertion/deletion is easy.");
+        root->yes->no  = createNode("", "",
+            "Array",
+            "Small data → sequential access fast.");
 
-    addChild(small, createLeaf("insert", "Linked List", "Small data, insertion/deletion fast."));
-    addChild(small, createLeaf("delete", "Linked List", "Small data, insertion/deletion fast."));
-    addChild(small, createLeaf("search", "Array", "Sequential access is fast for small data."));
-    addChild(small, createLeaf("sort", "Array", "Sorting is simple with small size."));
+    // MEDIUM & LARGE → handled in root->no
+    root->no = createNode("dataSize", "medium", NULL, NULL);
 
-    // MEDIUM
-    Node *medium = createNode("operation", "medium");
-    addChild(root, medium);
+    // MEDIUM →
+    root->no->yes = createNode("operation", "search", NULL, NULL);
+        root->no->yes->yes = createNode("", "",
+            "Binary Search Tree",
+            "Medium data → fast search.");
+        root->no->yes->no  = createNode("operation", "sort", NULL, NULL);
 
-    addChild(medium, createLeaf("search", "Binary Search Tree", "Good search performance."));
-    addChild(medium, createLeaf("sort", "Heap", "Heap sort efficient for medium data."));
-    addChild(medium, createLeaf("insert", "Linked List", "Balanced for moderate insert/delete."));
-    addChild(medium, createLeaf("delete", "Linked List", "Balanced for moderate insert/delete."));
+    root->no->yes->no->yes = createNode("", "",
+        "Heap", "Medium data → good for sorting.");
+    root->no->yes->no->no = createNode("", "",
+        "Linked List", "Moderate data → good for insertion/deletion.");
 
-    // LARGE
-    Node *large = createNode("priority", "large");
-    addChild(root, large);
+    // LARGE →
+    root->no->no = createNode("priority", "speed", NULL, NULL);
 
-    // large → speed
-    Node *speed = createNode("operation", "speed");
-    addChild(large, speed);
+    Node* largeSpeed = root->no->no->yes = createNode("operation", "search", NULL, NULL);
+        largeSpeed->yes = createNode("", "",
+            "Hash Table", "Large data → fastest search.");
+        largeSpeed->no  = createNode("order", "yes", NULL, NULL);
 
-    addChild(speed, createLeaf("search", "Hash Table", "Fastest average-case search."));
+    largeSpeed->no->yes = createNode("", "",
+        "Balanced Tree (AVL/Red-Black)",
+        "Large data → ordered + fast.");
+    largeSpeed->no->no = createNode("", "",
+        "Graph / Trie",
+        "Large structured data.");
 
-    Node *orderNode = createNode("order", "other");
-    addChild(speed, orderNode);
-
-    addChild(orderNode, createLeaf("yes", "Balanced Tree (AVL/RB)", "Maintains ordering."));
-    addChild(orderNode, createLeaf("no", "Graph / Trie", "Efficient for unordered large data."));
-
-    // large → space
-    addChild(large, createLeaf("space", "Compressed Data Structures", "Memory optimized."));
+    root->no->no->no = createNode("", "",
+        "Compressed Data Structures",
+        "Large data → optimized for memory.");
 
     return root;
+}
+
+// ---------------------------------------------------------
+// DFS Traversal
+// ---------------------------------------------------------
+void dfs(Node* node)
+{
+    if (!node) return;
+
+    if (strlen(node->recommendation) > 0)
+        printf("Leaf → %s : %s\n", node->recommendation, node->reason);
+    else
+        printf("Condition → %s == %s ?\n", node->condition, node->value);
+
+    dfs(node->yes);
+    dfs(node->no);
+}
+
+// ---------------------------------------------------------
+// Evaluate the decision tree
+// ---------------------------------------------------------
+void evaluate(Node* node, char dataSize[], char operation[],
+              char order[], char priority[],
+              char recommendation[], char reason[]) 
+{
+    if (!node) return;
+
+    // Leaf reached
+    if (strlen(node->recommendation) > 0) {
+        strcpy(recommendation, node->recommendation);
+        strcpy(reason, node->reason);
+        return;
+    }
+
+    // Compare based on node->condition
+    char* inputValue;
+
+    if (strcmp(node->condition, "dataSize") == 0) inputValue = dataSize;
+    else if (strcmp(node->condition, "operation") == 0) inputValue = operation;
+    else if (strcmp(node->condition, "order") == 0) inputValue = order;
+    else if (strcmp(node->condition, "priority") == 0) inputValue = priority;
+    else return;
+
+    // Follow yes/no based on match
+    if (strcmp(inputValue, node->value) == 0)
+        evaluate(node->yes, dataSize, operation, order, priority, recommendation, reason);
+    else
+        evaluate(node->no, dataSize, operation, order, priority, recommendation, reason);
 }
 
 #endif

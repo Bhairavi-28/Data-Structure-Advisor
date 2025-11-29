@@ -1,26 +1,22 @@
 #include <stdio.h>
-
 #include "input.h"
-#include "output.h"
 #include "rule_engine.h"
+#include "output.h"
 
-int main() {
-    char dataSize[10], operation[20], order[10], priority[10];
+int main()
+{
+    char dataSize[10], operation[20], order[5], priority[10];
+    char recommendation[50], reason[200];
 
-    LogContext log;
-    log.count = 0;
-
-    printf("\n====== DATA STRUCTURE ADVISOR ======\n");
+    printf("\n====== DATA STRUCTURE ADVISOR ======\n\n");
 
     getInput(dataSize, operation, order, priority);
+    Node* tree = buildDecisionTree();
+    evaluate(tree, dataSize, operation, order, priority, recommendation, reason);
+    showOutput(recommendation, reason);
 
-    Node *root = buildDecisionTree();
-    Node *leaf = traverseTree(root, dataSize, operation, order, priority, &log);
-
-    if (leaf != NULL)
-        showOutput(leaf->recommendation, leaf->reason);
-    else
-        printf("\nNo matching rule found!\n");
+    printf("\n--- Decision Tree DFS Traversal ---\n");
+    dfs(tree);
 
     return 0;
 }
