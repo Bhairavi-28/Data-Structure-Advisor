@@ -5,23 +5,19 @@
 #include <string.h>
 #include <stdlib.h>
 
-// ---------------------------------------------------------
 // Decision Tree Node Structure
-// ---------------------------------------------------------
 typedef struct Node {
-    char condition[50];        // What question/condition this node checks
-    char value[50];            // Value to compare against (optional)
+    char condition[50];        
+    char value[50];            
     
-    char recommendation[50];   // Filled only for leaf nodes
-    char reason[200];          // Explanation for leaf nodes
+    char recommendation[50];   
+    char reason[200];          
 
-    struct Node* yes;          // Yes branch
-    struct Node* no;           // No branch
+    struct Node* yes;          
+    struct Node* no;           
 } Node;
 
-// ---------------------------------------------------------
 // Create a node
-// ---------------------------------------------------------
 Node* createNode(const char *condition, const char *value,
                  const char *recommendation, const char *reason) 
 {
@@ -40,9 +36,7 @@ Node* createNode(const char *condition, const char *value,
     return n;
 }
 
-// ---------------------------------------------------------
 // Build the simple decision tree
-// ---------------------------------------------------------
 Node* buildDecisionTree() 
 {
     // Root: data size?
@@ -81,7 +75,7 @@ Node* buildDecisionTree()
         largeSpeed->no  = createNode("order", "yes", NULL, NULL);
 
     largeSpeed->no->yes = createNode("", "",
-        "Balanced Tree (AVL/Red-Black)",
+        "Balanced Tree (AVL)",
         "Large data → ordered + fast.");
     largeSpeed->no->no = createNode("", "",
         "Graph / Trie",
@@ -94,9 +88,7 @@ Node* buildDecisionTree()
     return root;
 }
 
-// ---------------------------------------------------------
 // DFS Traversal
-// ---------------------------------------------------------
 void dfs(Node* node)
 {
     if (!node) return;
@@ -110,9 +102,7 @@ void dfs(Node* node)
     dfs(node->no);
 }
 
-// ---------------------------------------------------------
 // Evaluate the decision tree
-// ---------------------------------------------------------
 void evaluate(Node* node, char dataSize[], char operation[],
               char order[], char priority[],
               char recommendation[], char reason[]) 
